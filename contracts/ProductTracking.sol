@@ -3,156 +3,227 @@ pragma solidity ^0.8.0;
 
 contract ProductTracking {
     struct Product {
-        string productId;
-        string name;
+        string serialNumber;
+        string productName;
         address manufacturer;
-        uint256 manufacturingDate;
-        bool isValid;
+        string remarks;
+        uint256 timestamp;
     }
 
-    struct TrackingEntry {
-        string location;
-        address handler;
-        address previousHandler;
-        string role;
+    struct TrackingRecord {
+        address currentSupplier;
+        address nextSupplier;
+        string sourceAddress;
+        string destinationAddress;
         uint256 timestamp;
+        string status;
         string remarks;
     }
 
-    mapping(string => Product) public products;
-    mapping(string => TrackingEntry[]) public trackingHistory;
-    mapping(address => string[]) public productsByManufacturer;
+    // Mappings
+    mapping(string => Product) public products; // combinedID => Product
+    mapping(string => TrackingRecord[]) public trackingHistory; // combinedID => history
+    mapping(address => string[]) public supplierProducts; // supplier => their product IDs
+    mapping(address => string[]) public manufacturerProducts; // manufacturer => their product IDs
 
-    event ProductRegistered(
-        string productId,
-        string name,
-        address manufacturer
+    // Events
+    event ProductCreated(
+        string combinedID,
+        address manufacturer,
+        address firstSupplier
     );
-    event LocationUpdated(
-        string productId,
-        string newLocation,
-        address handler
+    event ProductReceived(string combinedID, address supplier);
+    event ProductTransferred(
+        string combinedID,
+        address fromSupplier,
+        address toSupplier
     );
+    event TrackingUpdated(string combinedID, address supplier, string status);
 
-    function registerProduct(
-        string memory productId,
-        string memory name,
-        string memory location,
-        string memory remarks
-    ) public returns (bool) {
-        require(!products[productId].isValid, "Product already exists");
-
-        products[productId] = Product({
-            productId: productId,
-            name: name,
-            manufacturer: msg.sender,
-            manufacturingDate: block.timestamp,
-            isValid: true
-        });
-
-        productsByManufacturer[msg.sender].push(productId);
-
-        TrackingEntry memory entry = TrackingEntry({
-            location: location,
-            handler: msg.sender,
-            previousHandler: address(0), // No previous handler at initial registration
-            role: "manufacturer",
-            timestamp: block.timestamp,
-            remarks: remarks
-        });
-
-        trackingHistory[productId].push(entry);
-
-        emit ProductRegistered(productId, name, msg.sender);
-        return true;
+    function compareStrings(
+        string memory a,
+        string memory b
+    ) internal pure returns (bool) {
+        return keccak256(abi.encodePacked(a)) == keccak256(abi.encodePacked(b));
     }
 
-    function getProductsByManufacturer(
-        address manufacturer
-    ) public view returns (Product[] memory) {
-        // Fetch all product IDs associated with the manufacturer
-        string[] memory productIds = productsByManufacturer[manufacturer];
-
-        // Initialize a dynamic array to store the products
-        Product[] memory result = new Product[](productIds.length);
-
-        // Loop through each product ID to retrieve and store each Product struct
-        for (uint i = 0; i < productIds.length; i++) {
-            result[i] = products[productIds[i]];
+    // Manufacturer creates and assigns product
+    function createProduct(
+        string memory combinedID,
+        string memory serialNumber,
+        string memory productName,
+        string memory sourceAddress,
+        string memory destinationAddress,
+        address firstSupplier,
+        string memory remarks
+    ) public {
+        // Check for duplicate serial numbers in manufacturer's products
+        string[] memory mfrProductIds = manufacturerProducts[msg.sender];
+        for (uint i = 0; i < mfrProductIds.length; i++) {
+            Product memory existingProduct = products[mfrProductIds[i]];
+            require(
+                !compareStrings(existingProduct.serialNumber, serialNumber),
+                "Serial number already exists for this manufacturer"
+            );
         }
 
-        return result;
-    }
-
-    function addTrackingInfo(
-        string memory productId,
-        string memory newLocation,
-        string memory remarks,
-        address nextHandler // the next authorized handler for the product
-    ) public returns (bool) {
-        require(products[productId].isValid, "Product does not exist");
-        require(trackingHistory[productId].length > 0, "No tracking history");
-
-        // Verify that the current sender is the last recorded handler for this product
-        address currentHandler = trackingHistory[productId][
-            trackingHistory[productId].length - 1
-        ].handler;
-        require(
-            msg.sender == currentHandler,
-            "You are not the current authorized handler"
+        // Create product
+        products[combinedID] = Product(
+            serialNumber,
+            productName,
+            msg.sender,
+            remarks,
+            block.timestamp
         );
 
-        // Create the new tracking entry
-        TrackingEntry memory entry = TrackingEntry({
-            location: newLocation,
-            handler: msg.sender,
-            previousHandler: currentHandler,
-            role: "supplier",
-            timestamp: block.timestamp,
-            remarks: remarks
-        });
+        // Add to supplier's list
+        supplierProducts[firstSupplier].push(combinedID);
+        manufacturerProducts[msg.sender].push(combinedID);
 
-        trackingHistory[productId].push(entry);
+        // Create first tracking record
+        TrackingRecord memory record = TrackingRecord(
+            msg.sender,
+            firstSupplier,
+            sourceAddress,
+            destinationAddress,
+            block.timestamp,
+            "ASSIGNED",
+            remarks
+        );
+        trackingHistory[combinedID].push(record);
 
-        // Emit event for tracking update
-        emit LocationUpdated(productId, newLocation, msg.sender);
-
-        return true;
+        emit ProductCreated(combinedID, msg.sender, firstSupplier);
     }
 
-    function getTrackingHistory(
-        string memory productId
-    )
-        public
-        view
-        returns (
-            string[] memory locations,
-            address[] memory handlers,
-            address[] memory previousHandlers,
-            string[] memory roles,
-            uint256[] memory timestamps,
-            string[] memory remarks
-        )
-    {
-        require(products[productId].isValid, "Product not found");
+    // Supplier confirms receipt after QR scan
+    function confirmReceipt(string memory combinedID) public {
+        TrackingRecord[] memory history = trackingHistory[combinedID];
+        require(history.length > 0, "Product not found");
 
-        uint length = trackingHistory[productId].length;
+        TrackingRecord memory lastRecord = history[history.length - 1];
+        require(
+            msg.sender == lastRecord.nextSupplier,
+            "Not authorized supplier"
+        );
+        require(
+            !compareStrings(lastRecord.status, "RECEIVED"),
+            "Already received"
+        );
 
-        locations = new string[](length);
-        handlers = new address[](length);
-        previousHandlers = new address[](length);
-        roles = new string[](length);
-        timestamps = new uint256[](length);
-        remarks = new string[](length);
+        TrackingRecord memory record = TrackingRecord(
+            msg.sender, // current receiver becomes current supplier
+            address(0), // no next supplier yet
+            lastRecord.destinationAddress, // previous destination is now source
+            lastRecord.destinationAddress, // destination stays same until transfer
+            block.timestamp,
+            "RECEIVED",
+            "Product received by supplier"
+        );
+        trackingHistory[combinedID].push(record);
 
-        for (uint i = 0; i < length; i++) {
-            TrackingEntry storage entry = trackingHistory[productId][i];
-            locations[i] = entry.location;
-            handlers[i] = entry.handler;
-            previousHandlers[i] = entry.previousHandler;
-            roles[i] = entry.role;
-            timestamps[i] = entry.timestamp;
-            remarks[i] = entry.remarks;
+        emit ProductReceived(combinedID, msg.sender);
+    }
+
+    // Transfer to next supplier
+    function transferToNextSupplier(
+        string memory combinedID,
+        string memory newDestination,
+        address nextSupplier,
+        string memory remarks
+    ) public {
+        TrackingRecord[] memory history = trackingHistory[combinedID];
+        require(history.length > 0, "Product not found");
+
+        TrackingRecord memory lastRecord = history[history.length - 1];
+        require(msg.sender == lastRecord.currentSupplier, "Not authorized");
+        require(
+            compareStrings(lastRecord.status, "RECEIVED"),
+            "Must receive first"
+        );
+
+        // Add to next supplier's list
+        supplierProducts[nextSupplier].push(combinedID);
+
+        // Create transfer record
+        TrackingRecord memory record = TrackingRecord(
+            msg.sender,
+            nextSupplier,
+            lastRecord.destinationAddress,
+            newDestination,
+            block.timestamp,
+            "TRANSFERRED",
+            remarks
+        );
+        trackingHistory[combinedID].push(record);
+
+        emit ProductTransferred(combinedID, msg.sender, nextSupplier);
+    }
+
+    // Get products assigned to supplier
+    function getSupplierProducts() public view returns (Product[] memory) {
+        string[] memory productIds = supplierProducts[msg.sender];
+        Product[] memory supplierProds = new Product[](productIds.length);
+
+        for (uint i = 0; i < productIds.length; i++) {
+            supplierProds[i] = products[productIds[i]];
         }
+        return supplierProds;
+    }
+
+    function getManufacturerProducts() public view returns (Product[] memory) {
+        string[] memory productIds = manufacturerProducts[msg.sender];
+        Product[] memory mfrProds = new Product[](productIds.length);
+
+        for (uint i = 0; i < productIds.length; i++) {
+            mfrProds[i] = products[productIds[i]];
+        }
+        return mfrProds;
+    }
+
+    // Get tracking history
+    function getTrackingHistory(
+        string memory combinedID
+    ) public view returns (TrackingRecord[] memory) {
+        return trackingHistory[combinedID];
+    }
+
+    // Add interim tracking update
+    function addTrackingUpdate(
+        string memory combinedID,
+        string memory newDestination,
+        string memory remarks
+    ) public {
+        TrackingRecord[] memory history = trackingHistory[combinedID];
+        require(history.length > 0, "Product not found");
+
+        TrackingRecord memory lastRecord = history[history.length - 1];
+        require(
+            msg.sender == lastRecord.currentSupplier,
+            "Not authorized supplier"
+        );
+        require(
+            compareStrings(lastRecord.status, "RECEIVED"),
+            "Must receive first"
+        );
+
+        TrackingRecord memory record = TrackingRecord(
+            msg.sender,
+            address(0),
+            lastRecord.destinationAddress,
+            newDestination,
+            block.timestamp,
+            "IN_TRANSIT",
+            remarks
+        );
+        trackingHistory[combinedID].push(record);
+
+        emit TrackingUpdated(combinedID, msg.sender, "IN_TRANSIT");
+    }
+
+    // Get product details
+    function getProduct(
+        string memory combinedID
+    ) public view returns (Product memory) {
+        return products[combinedID];
     }
 }

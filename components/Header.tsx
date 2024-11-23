@@ -13,7 +13,6 @@ export default function Header() {
   const role = user?.publicMetadata?.role as string;
 
   const navigation = [
-    { name: 'Home', href: '/', icon: Home },
     ...(role === 'manufacturer' ? [
       { name: 'Dashboard', href: '/manufacturer/dashboard', icon: Shield },
       { name: 'Products', href: '/manufacturer/products', icon: Package },
