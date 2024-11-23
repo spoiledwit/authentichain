@@ -68,10 +68,13 @@ const SupplierDashboard: React.FC = () => {
 
   const fetchSupplierProducts = async (): Promise<void> => {
     try {
+      //@ts-ignore
       if (typeof window.ethereum === "undefined") {
         throw new Error("Please install MetaMask to use this application");
       }
+      //@ts-ignore
       const web3 = new Web3(window.ethereum as any);
+      //@ts-ignore
       await window.ethereum.request({ method: "eth_requestAccounts" });
 
       const accounts = await web3.eth.getAccounts();
@@ -98,6 +101,7 @@ const SupplierDashboard: React.FC = () => {
     setError("");
 
     try {
+            //@ts-ignore
       const web3 = new Web3(window.ethereum as any);
       const contract = new web3.eth.Contract(CONTRACT_ABI as any, CONTRACT_ADDRESS);
 
@@ -125,6 +129,7 @@ const SupplierDashboard: React.FC = () => {
 
     setConfirming(true);
     try {
+            //@ts-ignore
       const web3 = new Web3(window.ethereum as any);
       const contract = new web3.eth.Contract(CONTRACT_ABI as any, CONTRACT_ADDRESS);
       const accounts = await web3.eth.getAccounts();
@@ -157,6 +162,7 @@ const SupplierDashboard: React.FC = () => {
 
     setTransferring(true);
     try {
+            //@ts-ignore
       const web3 = new Web3(window.ethereum as any);
       const contract = new web3.eth.Contract(CONTRACT_ABI as any, CONTRACT_ADDRESS);
       const accounts = await web3.eth.getAccounts();
