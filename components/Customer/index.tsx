@@ -1,151 +1,271 @@
-"use client";
-import React, { useState } from "react";
-import dynamic from "next/dynamic";
+"use client"
+import React, { useEffect, useState } from "react";
 import Web3 from "web3";
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/lib/contract";
 import { QrReader } from "react-qr-reader";
+import { AlertCircle, Package, Timer, QrCode, RefreshCw, MapPin } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useSearchParams } from "next/navigation";
+
+// Types to match contract structure
+interface Product {
+  serialNumber: string;
+  productName: string;
+  manufacturer: string;
+  remarks: string;
+  timestamp: string;
+}
+
+interface TrackingRecord {
+  currentSupplier: string;
+  nextSupplier: string;
+  sourceAddress: string;
+  destinationAddress: string;
+  timestamp: string;
+  status: string;
+  remarks: string;
+}
 
 const CustomerDashboard = () => {
-  const [productId, setProductId] = useState<string>("");
-  const [trackingHistory, setTrackingHistory] = useState<any[]>([]);
+  const searchParams = useSearchParams()
+  const [productId, setProductId] = useState<string>(searchParams.get("product") || "");
+  const [product, setProduct] = useState<Product | null>(null);
+  const [trackingHistory, setTrackingHistory] = useState<TrackingRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [qrScanEnabled, setQrScanEnabled] = useState(false);
+  const [error, setError] = useState<string>("");
+
+  useEffect(()=>{
+    if(productId){
+      fetchProductData(productId);
+    }
+  }, [])
 
   const handleProductIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setProductId(e.target.value);
+    setError("");
   };
 
-  const fetchTrackingHistory = async (id: string) => {
+  const fetchProductData = async (id: string) => {
     try {
       setLoading(true);
+      setError("");
       //@ts-ignore
+
       if (typeof window.ethereum === "undefined") {
-        alert("Please install MetaMask!");
-        return;
+        throw new Error("Please install MetaMask!");
       }
 
       //@ts-ignore
       const web3 = new Web3(window.ethereum);
       const contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
 
-      // Fetch tracking history for the product ID
-      const history = await contract.methods.getTrackingHistory(id).call();
+      // Fetch both product details and tracking history
+      const [productDetails, history] = await Promise.all([
+        contract.methods.getProduct(id).call(),
+        contract.methods.getTrackingHistory(id).call()
+      ]);
 
-      console.log(history);
+      //@ts-ignore
+      if (productDetails.serialNumber === "") {
+        throw new Error("Product not found");
+      }
+      //@ts-ignore
+      setProduct(productDetails);
       //@ts-ignore
       setTrackingHistory(history);
-    } catch (error) {
-      alert("Failed to fetch tracking history. Please check the product ID.");
+    } catch (error: any) {
+      setError(error.message || "Failed to fetch product data");
+      setProduct(null);
+      setTrackingHistory([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFetchTrackingHistory = () => {
-    if (productId.trim()) {
-      fetchTrackingHistory(productId);
-    } else {
-      alert("Please enter a Product ID or scan a QR code.");
+  const handleFetchData = () => {
+    if (!productId.trim()) {
+      setError("Please enter a Product ID or scan a QR code");
+      return;
     }
+    fetchProductData(productId);
   };
 
-  const handleScan = (data: string | null) => {
-    if (data) {
-      setProductId(data);
+  const handleScan = (result: any) => {
+    if (result?.text) {
+      setProductId(result.text);
       setQrScanEnabled(false);
-      fetchTrackingHistory(data);
+      fetchProductData(result.text);
     }
   };
 
-  const handleError = (err: any) => {
-    console.error("QR scanning error:", err);
-    alert("Failed to scan QR code. Check console for details.");
+  const getStatusColor = (status: string) => {
+    switch (status.toUpperCase()) {
+      case 'RECEIVED': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      case 'TRANSFERRED': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+      case 'IN_TRANSIT': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+    }
   };
 
   return (
-    <div className="text-center p-6">
-      <h1 className="text-2xl font-bold mb-4">Welcome to AuthentiChain</h1>
-      <p>Enter a Product ID or scan a QR code to verify authenticity.</p>
-
-      {/* Manual Product ID input */}
-      <div className="mt-4">
-        <input
-          type="text"
-          value={productId}
-          onChange={handleProductIdChange}
-          placeholder="Enter Product ID"
-          className="w-full max-w-md border rounded-lg p-2 mt-2 text-black"
-        />
-        <button
-          onClick={handleFetchTrackingHistory}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 mt-4 rounded-lg"
-          disabled={loading}
-        >
-          {loading ? "Fetching..." : "Fetch Tracking History"}
-        </button>
+    <div className="max-w-7xl mx-auto p-3 sm:p-6 space-y-6 sm:space-y-8">
+      <div className="text-center space-y-2 sm:space-y-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Welcome to AuthentiChain</h1>
+        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+          Verify product authenticity and track its journey through the supply chain
+        </p>
       </div>
 
-      {/* QR Code Scanner Toggle */}
-      <div className="mt-6">
-        <button
-          onClick={() => setQrScanEnabled((prev) => !prev)}
-          className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg"
-        >
-          {qrScanEnabled ? "Close QR Scanner" : "Scan QR Code"}
-        </button>
-      </div>
-
-      {/* QR Code Scanner */}
-      {qrScanEnabled && (
-        <div className="mt-4 w-full max-w-md mx-auto">
-          <QrReader
-            onResult={(result, error) => {
-              console.log(result);
-              console.log(error);
-            }}
-            //@ts-ignore
-            style={{ width: "100%" }}
-          />
-        </div>
-      )}
-
-      {/* Display Tracking History */}
-      {trackingHistory.length > 0 && (
-        <div className="mt-6 text-left w-full max-w-2xl mx-auto">
-          <h2 className="text-xl font-semibold mb-4">
-            Tracking History for Product ID: {productId}
-          </h2>
-          <ul className="space-y-4">
-            {trackingHistory.map((entry, index) => (
-              <li
-                key={index}
-                className="p-4 border rounded-lg bg-white text-black dark:bg-[#1A1A1A] dark:text-white"
+      <Card>
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Package className="h-5 w-5" />
+            Product Verification
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <input
+              type="text"
+              value={productId}
+              onChange={handleProductIdChange}
+              placeholder="Enter Product ID"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 text-sm sm:text-base"
+            />
+            <div className="flex gap-2 sm:gap-4">
+              <button
+                onClick={handleFetchData}
+                disabled={loading}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded-lg disabled:opacity-50 text-sm sm:text-base"
               >
-                <p>
-                  <strong>Location:</strong> {entry.location}
-                </p>
-                <p>
-                  <strong>Handler:</strong> {entry.handler}
-                </p>
-                <p>
-                  <strong>Role:</strong> {entry.role}
-                </p>
-                <p>
-                  <strong>Timestamp:</strong>{" "}
-                  {new Date(parseInt(entry.timestamp) * 1000).toLocaleString()}
-                </p>
-                <p>
-                  <strong>Remarks:</strong> {entry.remarks}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </div>
+                {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}
+                {loading ? "Fetching..." : "Verify"}
+              </button>
+              
+            </div>
+          </div>
+
+          {qrScanEnabled && (
+            <div className="mt-4 w-full max-w-md mx-auto">
+              <QrReader
+                constraints={{ facingMode: 'environment' }}
+                onResult={handleScan}
+                containerStyle={{ borderRadius: '0.5rem', overflow: 'hidden' }}
+                videoContainerStyle={{ borderRadius: '0.5rem', width: '100%', height: 'auto' }}
+              />
+            </div>
+          )}
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription className="text-sm">{error}</AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+
+      {product && (
+        <Card>
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <Package className="h-5 w-5" />
+              Product Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <p className="text-xs sm:text-sm font-medium text-gray-500">Serial Number</p>
+                <p className="text-sm sm:text-base break-all">{product.serialNumber}</p>
+              </div>
+              <div className="space-y-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <p className="text-xs sm:text-sm font-medium text-gray-500">Product Name</p>
+                <p className="text-sm sm:text-base">{product.productName}</p>
+              </div>
+              <div className="space-y-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <p className="text-xs sm:text-sm font-medium text-gray-500">Manufacturer</p>
+                <p className="font-mono text-sm sm:text-base break-all">{product.manufacturer}</p>
+              </div>
+              <div className="space-y-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <p className="text-xs sm:text-sm font-medium text-gray-500">Manufacturing Date</p>
+                <p className="text-sm sm:text-base">{new Date(parseInt(product.timestamp) * 1000).toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      {trackingHistory.length === 0 && (
-        <div className="mt-6 text-gray-600 dark:text-gray-400">
-          No tracking history available for this product.
+      {trackingHistory.length > 0 && (
+        <Card>
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <Timer className="h-5 w-5" />
+              Supply Chain Journey
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-6">
+            <div className="space-y-6">
+              {trackingHistory.map((record, index) => (
+                <div key={index} className="relative flex gap-3 sm:gap-4 pb-6 last:pb-0">
+                  <div className="flex flex-col items-center">
+                    <div className="w-3 h-3 bg-blue-600 rounded-full" />
+                    {index !== trackingHistory.length - 1 && (
+                      <div className="w-0.5 h-full bg-gray-200 dark:bg-gray-700" />
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <span className={`px-3 py-1 text-xs sm:text-sm rounded-full w-fit ${getStatusColor(record.status)}`}>
+                        {record.status}
+                      </span>
+                      <span className="text-xs sm:text-sm text-gray-500">
+                        {new Date(parseInt(record.timestamp) * 1000).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-800 p-3 sm:p-4 rounded-lg space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-gray-500" />
+                            <p className="text-xs sm:text-sm font-medium text-gray-500">From</p>
+                          </div>
+                          <p className="font-mono text-xs sm:text-sm break-all">{record.currentSupplier}</p>
+                          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{record.sourceAddress}</p>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-gray-500" />
+                            <p className="text-xs sm:text-sm font-medium text-gray-500">To</p>
+                          </div>
+                          <p className="font-mono text-xs sm:text-sm break-all">{record.nextSupplier || 'Current Location'}</p>
+                          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{record.destinationAddress}</p>
+                        </div>
+                      </div>
+                      {record.remarks && (
+                        <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                          <p className="text-xs sm:text-sm font-medium text-gray-500 mb-1">Remarks</p>
+                          <p className="text-xs sm:text-sm">{record.remarks}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {!loading && !error && !product && !trackingHistory.length && (
+        <div className="text-center py-8 sm:py-12">
+          <Package className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+          <p className="text-sm sm:text-base text-gray-500">
+            Enter a Product ID or scan a QR code to view product details and tracking history
+          </p>
         </div>
       )}
     </div>

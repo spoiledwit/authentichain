@@ -284,7 +284,7 @@ export default function ManufacturerDashboard() {
               </div>
               <div className="border rounded p-2">
                 <QRCodeSVG
-                  value={product.serialNumber}
+                  value={`${process.env.NEXT_PUBLIC_URL}?product=${product.manufacturer}-${product.serialNumber}`}
                   size={80}
                   level="H"
                   includeMargin={true}

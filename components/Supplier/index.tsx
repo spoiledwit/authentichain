@@ -214,7 +214,7 @@ const SupplierDashboard: React.FC = () => {
     if (history.length === 0) return false;
     const lastRecord = history[history.length - 1];
     return (
-      lastRecord.status === "TRANSFERRED" &&
+      (lastRecord.status === "TRANSFERRED" || lastRecord.status === "ASSIGNED")  &&
       lastRecord.nextSupplier.toLowerCase() === currentAccount &&
       !lastRecord.status.includes("RECEIVED")
     );
