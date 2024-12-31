@@ -96,267 +96,6 @@
   {
     "inputs": [
       {
-        "internalType": "string",
-        "name": "combinedID",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "newDestination",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "remarks",
-        "type": "string"
-      }
-    ],
-    "name": "addTrackingUpdate",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "combinedID",
-        "type": "string"
-      }
-    ],
-    "name": "confirmReceipt",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "combinedID",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "serialNumber",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "productName",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "sourceAddress",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "destinationAddress",
-        "type": "string"
-      },
-      {
-        "internalType": "address",
-        "name": "firstSupplier",
-        "type": "address"
-      },
-      {
-        "internalType": "string",
-        "name": "remarks",
-        "type": "string"
-      }
-    ],
-    "name": "createProduct",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getManufacturerProducts",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "string",
-            "name": "serialNumber",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "productName",
-            "type": "string"
-          },
-          {
-            "internalType": "address",
-            "name": "manufacturer",
-            "type": "address"
-          },
-          {
-            "internalType": "string",
-            "name": "remarks",
-            "type": "string"
-          },
-          {
-            "internalType": "uint256",
-            "name": "timestamp",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct ProductTracking.Product[]",
-        "name": "",
-        "type": "tuple[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "combinedID",
-        "type": "string"
-      }
-    ],
-    "name": "getProduct",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "string",
-            "name": "serialNumber",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "productName",
-            "type": "string"
-          },
-          {
-            "internalType": "address",
-            "name": "manufacturer",
-            "type": "address"
-          },
-          {
-            "internalType": "string",
-            "name": "remarks",
-            "type": "string"
-          },
-          {
-            "internalType": "uint256",
-            "name": "timestamp",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct ProductTracking.Product",
-        "name": "",
-        "type": "tuple"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getSupplierProducts",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "string",
-            "name": "serialNumber",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "productName",
-            "type": "string"
-          },
-          {
-            "internalType": "address",
-            "name": "manufacturer",
-            "type": "address"
-          },
-          {
-            "internalType": "string",
-            "name": "remarks",
-            "type": "string"
-          },
-          {
-            "internalType": "uint256",
-            "name": "timestamp",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct ProductTracking.Product[]",
-        "name": "",
-        "type": "tuple[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "combinedID",
-        "type": "string"
-      }
-    ],
-    "name": "getTrackingHistory",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "currentSupplier",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "nextSupplier",
-            "type": "address"
-          },
-          {
-            "internalType": "string",
-            "name": "sourceAddress",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "destinationAddress",
-            "type": "string"
-          },
-          {
-            "internalType": "uint256",
-            "name": "timestamp",
-            "type": "uint256"
-          },
-          {
-            "internalType": "string",
-            "name": "status",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "remarks",
-            "type": "string"
-          }
-        ],
-        "internalType": "struct ProductTracking.TrackingRecord[]",
-        "name": "",
-        "type": "tuple[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "",
         "type": "address"
@@ -504,6 +243,62 @@
       },
       {
         "internalType": "string",
+        "name": "serialNumber",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "productName",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "sourceAddress",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "destinationAddress",
+        "type": "string"
+      },
+      {
+        "internalType": "address",
+        "name": "firstSupplier",
+        "type": "address"
+      },
+      {
+        "internalType": "string",
+        "name": "remarks",
+        "type": "string"
+      }
+    ],
+    "name": "createProduct",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "combinedID",
+        "type": "string"
+      }
+    ],
+    "name": "confirmReceipt",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "combinedID",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
         "name": "newDestination",
         "type": "string"
       },
@@ -521,6 +316,211 @@
     "name": "transferToNextSupplier",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getSupplierProducts",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "serialNumber",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "productName",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "manufacturer",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "remarks",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "timestamp",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct ProductTracking.Product[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getManufacturerProducts",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "serialNumber",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "productName",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "manufacturer",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "remarks",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "timestamp",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct ProductTracking.Product[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "combinedID",
+        "type": "string"
+      }
+    ],
+    "name": "getTrackingHistory",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "currentSupplier",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "nextSupplier",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "sourceAddress",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "destinationAddress",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "timestamp",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "status",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "remarks",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct ProductTracking.TrackingRecord[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "combinedID",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "newDestination",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "remarks",
+        "type": "string"
+      }
+    ],
+    "name": "addTrackingUpdate",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "combinedID",
+        "type": "string"
+      }
+    ],
+    "name": "getProduct",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "serialNumber",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "productName",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "manufacturer",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "remarks",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "timestamp",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct ProductTracking.Product",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   }
 ]
